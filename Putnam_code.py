@@ -49,9 +49,7 @@ trades["PROD_ID"] = trades.PROD_ID.astype("object")
 map["individual"] = map.INDIVIDUAL_IDS.str.replace(r"[\]\[\'\s]+", "")  # using regular expression to get rid of square brackets and qutations
 map["individual1"] = map.apply(lambda x: x[2].split(","), axis = 1)  # split the string based on comma and store it as a list
 map["length"] = map.apply(lambda x: len(x[3]), axis = 1)
-partner_individual2 = map.explode("individual1")
-partner_individual2.drop(["individual", "INDIVIDUAL_IDS"], axis = 1, inplace = True)
-partner_individual2.columns = ["partnership", "individuals", "length"]
+
 partner_individual = map["individual1"].apply(pd.Series)  # span all the list into columns in the dataframe
 partner_individual["Partner"] = map["PARTNERSHIP_ID"]
 col_names = ["member1", "member2", "member3", "member4", "member5", "member6", "member7", "member8",
@@ -82,6 +80,10 @@ partners = trades[trades["TRADE_TYPE"] == "P"]
 # part_agg.sort_values(ascending = False, inplace = True)
 
 # distribute each partnership's trade into each individual advisors
+partner_individual2 = map.explode("individual1")
+partner_individual2.drop(["individual", "INDIVIDUAL_IDS"], axis = 1, inplace = True)
+partner_individual2.columns = ["partnership", "individuals", "length"]
+
 merged_partner = pd.merge(partner_individual2, partners, how = "right", left_on = "partnership", right_on = "ID")
 merged_partner["TRAN_AMT"] = merged_partner["TRAN_AMT"] / merged_partner["length"] # distribute the trade amount evenly to each advisors
 
@@ -99,16 +101,16 @@ trades_corrected = pd.concat([individuals, individuals_p]) # vertically concaten
 trades_agg = trades_corrected.groupby(["ID"])["TRAN_AMT"].sum()
 
 # Explore relationship between touchpoint and trades
-a = touchpoint[touchpoint["ID"] == trades.iloc[0, 0]]
-b = trades[trades["ID"] == trades.iloc[0, 0]]
-a = a.sort_values(by = "DATE")
-b = b.sort_values(by = "TRAN_DATE")
+# a = touchpoint[touchpoint["ID"] == trades.iloc[0, 0]]
+# b = trades[trades["ID"] == trades.iloc[0, 0]]
+# a = a.sort_values(by = "DATE")
+# b = b.sort_values(by = "TRAN_DATE")
 
 # summary the engagement of each advisor
 touchpoint_individual = touchpoint.groupby(["ID"]).agg({'EMAIL_SENT':'sum','EMAIL_OPENED':'sum', 'IN_PERSON_MEETING':'sum',
                                                     'PHONE_ATTEMPT':'sum', 'PHONE_SUCCESS':'sum', 'WEBINAR':'sum',
-                                                    'MAIL':'sum'}
-
+                                                    'MAIL':'sum'})
+#
 # merge touchpoint information onto trades table
 all_table = pd.merge(trades_agg, touchpoint_individual, how = "right", left_index = True, right_index = True)
 all_table = pd.merge(firm_info, all_table, left_on = "ID", right_index = True)
@@ -117,7 +119,7 @@ all_table = pd.merge(firm_info, all_table, left_on = "ID", right_index = True)
 all_table_nooutlier = all_table[all_table["ID"] != "ZEKBKU4CMP"]
 
 # export the data
-all_table.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/data/all_table.csv")
+# all_table.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/data/all_table.csv")
 
 #%% visualization
 # high value traders
@@ -131,6 +133,13 @@ all_table.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/data/all_table
 # sns.barplot(x="TRAN_AMT", y="ID", data=barchart, color="b")
 # ax.set_title("Top 20 high value traders", )
 # plt.show()
+
+# scatter plot for tran_amt and
+sns.scatterplot(y = "TRAN_AMT", x = "EMAIL_SENT", data = all_table)
+plt.title("EMAIL_SENT v.s TRAN_AMT")
+
+sns.scatterplot(x = "EMAIL_SENT", y = "TRAN_AMT", data = all_table_nooutlier)
+plt.title("EMAIL_SENT v.s TRAN_AMT without outlier")
 
 # pair scatter plot to explore the relationshiop between variables
 sns.pairplot(all_table)
@@ -215,6 +224,21 @@ pca = PCA(n_components = 2)
 PCAs = pd.DataFrame(pca.fit_transform(Standardized))
 PCAs.columns = ["PC1", "PC2"]
 
+# elbow plot
+pcaplot = PCA(n_components = 8)
+pcaplot.fit(Standardized)
+pcaplot.explained_variance_ratio_
+pca_plot = pd.DataFrame(pcaplot.explained_variance_ratio_)
+pca_plot["PCs"] = [1, 2, 3, 4, 5, 6, 7, 8]
+pca_plot.columns = ["variance", "PCs"]
+
+fig, ax = plt.subplots(1, 1)
+ax.plot(pca_plot.PCs, pca_plot.variance, "o-")
+ax.set_xlabel("number of PCs", fontsize = 11)
+ax.set_ylabel("Variance Explained", fontsize = 11)
+ax.set_title("Elbow Plot", fontsize = 13)
+plt.show()
+
 # project data onto two PCs
 fig, ax = plt.subplots(1, 1)
 fig.set_figheight(10)
@@ -227,7 +251,7 @@ ax.scatter(PCAs.iloc[:, 0], PCAs.iloc[:, 1])
 plt.show()
 
 # Clustering
-dbscan = DBSCAN(eps = 0.5, min_samples = 6)
+dbscan = DBSCAN(eps = 0.5, min_samples = 5)
 clusters = pd.DataFrame(dbscan.fit_predict(PCAs))
 
 PCAs["clusters"] = clusters
@@ -240,7 +264,8 @@ ax.set_ylabel("PC2", fontsize = 15)
 ax.set_title("2 Principle Components with clustering", fontsize = 20)
 ax.legend(clusters)
 
-sns.lmplot(data = clusters, x = "PC1", y = "PC2", hue = "clusters", fit_reg = False, legend = True, legend_out = True)
+sns.lmplot(data = PCAs, x = "PC1", y = "PC2", hue = "clusters", fit_reg = False, legend = True, legend_out = True)
+plt.title("Advisor Clusters")
 # ax.scatter(PCAs.iloc[:, 0], PCAs.iloc[:, 1], c = clusters, cmap = "plasma")ZZ
 plt.show()
 
