@@ -122,18 +122,6 @@ all_table_nooutlier = all_table[all_table["ID"] != "ZEKBKU4CMP"]
 # all_table.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/data/all_table.csv")
 
 #%% visualization
-# high value traders
-# sns.set(style="whitegrid")
-# # Initialize the matplotlib figure
-# f, ax = plt.subplots(figsize=(6, 10))
-#
-# # sns.set_color_codes("pastel")
-# barchart = all_table.sort_values(by = "TRAN_AMT", ascending = False).iloc[:21, :]
-# sns.set_color_codes("muted")
-# sns.barplot(x="TRAN_AMT", y="ID", data=barchart, color="b")
-# ax.set_title("Top 20 high value traders", )
-# plt.show()
-
 # scatter plot for tran_amt and
 sns.scatterplot(y = "TRAN_AMT", x = "EMAIL_SENT", data = all_table)
 plt.title("EMAIL_SENT v.s TRAN_AMT")
@@ -164,7 +152,7 @@ y = encoded[["TRAN_AMT"]]
 # Lasso Regression used for variable selection
 lasso = Lasso(tol = 0.5)
 
-parameters = {"alpha": [1e-15, 1e-10, 1e-8, 1e-4, 1e-3, 1e-2, 1, 5, 10, 20, 50, 100]}
+parameters = {"alpha": [1e-15, 1e-10, 1e-8, 1e-4, 1e-3, 1e-2, 1, 5, 10, 20]}
 
 lasso_regressor = GridSearchCV(lasso, parameters, scoring = "neg_mean_squared_error", cv = 4)
 
@@ -255,17 +243,22 @@ dbscan = DBSCAN(eps = 0.5, min_samples = 5)
 clusters = pd.DataFrame(dbscan.fit_predict(PCAs))
 
 PCAs["clusters"] = clusters
-
-fig, ax = plt.subplots(1, 1)
-fig.set_figheight(10)
-fig.set_figwidth(10)
-ax.set_xlabel("PC1", fontsize = 15)
-ax.set_ylabel("PC2", fontsize = 15)
-ax.set_title("2 Principle Components with clustering", fontsize = 20)
-ax.legend(clusters)
+PCAs.index = Standardized.index
 
 sns.lmplot(data = PCAs, x = "PC1", y = "PC2", hue = "clusters", fit_reg = False, legend = True, legend_out = True)
 plt.title("Advisor Clusters")
 # ax.scatter(PCAs.iloc[:, 0], PCAs.iloc[:, 1], c = clusters, cmap = "plasma")ZZ
 plt.show()
 
+cluster_list = PCAs.sort_values(by = "clusters")
+# cluster_list.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/clusterlist.csv")
+# c0 = cluster_list[cluster_list["clusters"] == 0]
+# c1= cluster_list[cluster_list["clusters"] == 1]
+# c2 = cluster_list[cluster_list["clusters"] == 2]
+# c3 = cluster_list[cluster_list["clusters"] == 3]
+# c_1 = cluster_list[cluster_list["clusters"] == -1]
+# c0.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/c0.csv")
+# c1.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/c1.csv")
+# c2.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/c2.csv")
+# c3.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/c3.csv")
+# c_1.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/c_1.csv")
