@@ -262,3 +262,4 @@ cluster_list = PCAs.sort_values(by = "clusters")
 # c2.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/c2.csv")
 # c3.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/c3.csv")
 # c_1.to_csv("/Users/dauku/Desktop/career/Cover Letter/Putnam/c_1.csv")
+
